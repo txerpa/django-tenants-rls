@@ -19,7 +19,7 @@ class CeleryExecutor(MigrationExecutor):
             for schema_name in tenants
         )
         result = tenant_migrations.apply_async()
-        unsuccessfully_migrated_schemas = filter(lambda schema_name: schema_name is not None, result.get())
+        unsuccessfully_migrated_schemas = len(filter(lambda schema_name: schema_name is not None, result.get()))
         self.logger.info('Completed migrations for private tenants: {} correct, {} incorrect ({})'.format(
             len(tenants) - len(unsuccessfully_migrated_schemas), len(unsuccessfully_migrated_schemas),
             ", ".join(str(x) for x in unsuccessfully_migrated_schemas)))
