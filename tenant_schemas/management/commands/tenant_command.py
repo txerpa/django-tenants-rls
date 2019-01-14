@@ -4,6 +4,9 @@ from django.core.management import call_command, get_commands, load_command_clas
 from django.db import connection
 from tenant_schemas.management.commands import InteractiveTenantOption
 
+import logging
+logger = logging.getLogger()
+
 
 class Command(InteractiveTenantOption, BaseCommand):
     help = "Wrapper around django commands for use with an individual tenant"
@@ -39,5 +42,8 @@ class Command(InteractiveTenantOption, BaseCommand):
 
     def handle(self, *args, **options):
         tenant = self.get_tenant_from_options_or_interactive(**options)
+        logger.info(tenant)
         connection.set_tenant(tenant)
+        logger.info(args)
+        logger.info(options)
         call_command(*args, **options)

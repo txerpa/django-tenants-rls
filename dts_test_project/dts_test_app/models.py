@@ -8,9 +8,9 @@ class DummyModel(models.Model):
     """
     name = models.CharField(max_length=100)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
 class ModelWithFkToPublicUser(models.Model):
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
