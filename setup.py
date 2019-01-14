@@ -29,14 +29,14 @@ setup(
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Framework :: Django',
-        'Framework :: Django :: 2.1.5',
+        'Framework :: Django :: 2.1.3',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
         'Topic :: Database',
         'Topic :: Software Development :: Libraries',
     ],
     install_requires=[
-        'Django == 2.1.5',
+        'Django == 2.1.3',
         'psycopg2 == 2.7.6.1',
     ],
     zip_safe=False,
