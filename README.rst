@@ -194,6 +194,28 @@ tenant specific apps. Complete instructions can be found at
 `django-tenant-schemas.readthedocs.io`_.
 
 
+Logging
+-------
+
+You can configure logging as normal django app, add new logger for tenant_schemas app to loggers section, something like this:
+
+.. code-block:: python
+
+    LOGGING = {
+        # ...
+
+        'loggers': {
+            # ...
+
+            'tenant_schemas': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+            }
+        }
+    }
+
+Use handlers of your preference.
+
 
 .. _django: https://www.djangoproject.com/
 .. _PostgreSQL schemas: http://www.postgresql.org/docs/9.1/static/ddl-schemas.html
