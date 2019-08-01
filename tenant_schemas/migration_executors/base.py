@@ -10,12 +10,11 @@ from tenant_schemas.utils import get_public_schema_name
 
 class MigrationExecutor(object):
     codename = None
-    LOGGER_NAME = 'migration'
 
     def __init__(self, args, options):
         self.args = args
         self.options = options
-        self.logger = self.get_or_create_logger()
+        self.logger = logging.getLogger(__name__)
 
     def run_migrations(self, tenants):
         public_schema_name = get_public_schema_name()
@@ -72,20 +71,3 @@ class MigrationExecutor(object):
 
     def run_tenant_migrations(self, tenant):
         raise NotImplementedError
-
-    @classmethod
-    def get_or_create_logger(cls):
-        """
-        Return logger for migration executor.
-        Configure logger handlers if they are not already configured
-        """
-        logger = logging.getLogger(cls.LOGGER_NAME)
-        if len(logger.handlers) == 0:
-            logger_path = getattr(settings, 'TENANT_MIGRATION_LOGGER_PATH', '')
-            hdlr = logging.FileHandler(os.path.join(logger_path, '{}.log'.format(cls.LOGGER_NAME)))
-            formatter = logging.Formatter('[%(asctime)s][%(levelname)s] %(message)s')
-            hdlr.setFormatter(formatter)
-            logger.addHandler(hdlr)
-            logger.setLevel(logging.INFO)
-
-        return logger
