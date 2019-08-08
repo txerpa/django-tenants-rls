@@ -5,7 +5,7 @@ from django.db import connection
 from tenant_schemas.management.commands import InteractiveTenantOption
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Command(InteractiveTenantOption, BaseCommand):
