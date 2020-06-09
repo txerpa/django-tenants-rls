@@ -1,15 +1,11 @@
 from contextlib import contextmanager
 
-from django.conf import settings
 from django.db import connection
-
-try:
-    from django.apps import apps, AppConfig
-    get_model = apps.get_model
-except ImportError:
-    from django.db.models.loading import get_model
-    AppConfig = None
+from django.conf import settings
 from django.core import mail
+
+from django.apps import apps, AppConfig
+get_model = apps.get_model
 
 
 @contextmanager
@@ -61,13 +57,6 @@ def clean_tenant_url(url_string):
     return url_string
 
 
-def remove_www_and_dev(hostname):
-    """
-    Legacy function - just in case someone is still using the old name
-    """
-    return remove_www(hostname)
-
-
 def remove_www(hostname):
     """
     Removes www. from the beginning of the address. Only for
@@ -89,21 +78,7 @@ def django_is_in_test_mode():
 
 
 def schema_exists(schema_name):
-    cursor = connection.cursor()
-
-    # check if this schema already exists in the db
-    sql = 'SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE LOWER(nspname) = LOWER(%s))'
-    cursor.execute(sql, (schema_name, ))
-
-    row = cursor.fetchone()
-    if row:
-        exists = row[0]
-    else:
-        exists = False
-
-    cursor.close()
-
-    return exists
+    return get_tenant_model().objects.filter(schema_name=schema_name).exists()
 
 
 def app_labels(apps_list):

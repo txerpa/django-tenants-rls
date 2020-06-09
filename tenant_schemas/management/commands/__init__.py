@@ -11,6 +11,7 @@ except ImportError:
 from tenant_schemas.utils import get_tenant_model, get_public_schema_name
 
 
+# TODO: remove all schema reference
 class BaseTenantCommand(BaseCommand):
     """
     Generic command class useful for iterating any existing command
@@ -121,7 +122,7 @@ class TenantWrappedCommand(InteractiveTenantOption, BaseCommand):
     def __new__(cls, *args, **kwargs):
         obj = super(TenantWrappedCommand, cls).__new__(cls, *args, **kwargs)
         obj.command_instance = obj.COMMAND()
-        if django.VERSION <= (1,10,0):
+        if django.VERSION <= (1, 10, 0):
             obj.option_list = obj.command_instance.option_list
         return obj
 
@@ -140,14 +141,14 @@ class SyncCommon(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--tenant', action='store_true', dest='tenant', default=False,
-                    help='Tells Django to populate only tenant applications.')
+                            help='Tells Django to populate only tenant applications.')
         parser.add_argument('--shared', action='store_true', dest='shared', default=False,
-                    help='Tells Django to populate only shared applications.')
+                            help='Tells Django to populate only shared applications.')
         parser.add_argument('--app_label', action='store', dest='app_label', nargs='?',
-                    help='App label of an application to synchronize the state.')
+                            help='App label of an application to synchronize the state.')
         parser.add_argument('--migration_name', action='store', dest='migration_name', nargs='?',
-                    help=('Database state will be brought to the state after that '
-                          'migration. Use the name "zero" to unapply all migrations.'))
+                            help=('Database state will be brought to the state after that '
+                                  'migration. Use the name "zero" to unapply all migrations.'))
         parser.add_argument("-s", "--schema", dest="schema_name")
         parser.add_argument('--executor', action='store', dest='executor', default=None,
                             help='Executor for running migrations [standard (default)|parallel|async]')

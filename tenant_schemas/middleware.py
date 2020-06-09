@@ -2,7 +2,7 @@ import django
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import DisallowedHost
+from django.core.exceptions import DisallowedHost, PermissionDenied
 from django.db import connection
 from django.http import Http404
 from tenant_schemas.utils import (get_tenant_model, remove_www,
@@ -21,6 +21,7 @@ various ways which is better than corrupting or revealing data.
 Extend BaseTenantMiddleware for a custom tenant selection strategy,
 such as inspecting the header, or extracting it from some OAuth token.
 """
+
 
 class BaseTenantMiddleware(MIDDLEWARE_MIXIN):
     TENANT_NOT_FOUND_EXCEPTION = Http404
@@ -66,13 +67,28 @@ class BaseTenantMiddleware(MIDDLEWARE_MIXIN):
         if hasattr(settings, 'PUBLIC_SCHEMA_URLCONF') and request.tenant.schema_name == get_public_schema_name():
             request.urlconf = settings.PUBLIC_SCHEMA_URLCONF
 
+
 class TenantMiddleware(BaseTenantMiddleware):
     """
     Selects the proper database schema using the request host. E.g. <my_tenant>.<my_domain>
     """
 
     def get_tenant(self, model, hostname, request):
-            return model.objects.get(domain_url=hostname)
+        return model.objects.get(domain_url=hostname)
+
+
+class RequestHeaderMiddleware(BaseTenantMiddleware):
+
+    def get_tenant(self, model, hostname, request):
+        schema_name = self.get_schema_name(request)
+        return model.objects.get(schema_name=schema_name)
+
+    @staticmethod
+    def get_schema_name(request):
+        if 'HTTP_AUTHORIZATION' in request.META and 'HTTP_X_TENANT' in request.META:
+            return request.META['HTTP_X_TENANT']
+        else:
+            return None
 
 
 class SuspiciousTenantMiddleware(TenantMiddleware):

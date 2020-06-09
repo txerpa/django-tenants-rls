@@ -1,5 +1,3 @@
-import re
-import warnings
 import psycopg2
 
 from django.conf import settings
@@ -8,36 +6,11 @@ from django.core.exceptions import ImproperlyConfigured, ValidationError
 import django.db.utils
 
 from tenant_schemas.utils import get_public_schema_name, get_limit_set_calls
-from tenant_schemas.postgresql_backend.introspection import DatabaseSchemaIntrospection
 
 
 ORIGINAL_BACKEND = getattr(settings, 'ORIGINAL_BACKEND', 'django.db.backends.postgresql_psycopg2')
 # Django 1.9+ takes care to rename the default backend to 'django.db.backends.postgresql'
 original_backend = django.db.utils.load_backend(ORIGINAL_BACKEND)
-
-EXTRA_SEARCH_PATHS = getattr(settings, 'PG_EXTRA_SEARCH_PATHS', [])
-
-# from the postgresql doc
-SQL_IDENTIFIER_RE = re.compile(r'^[_a-zA-Z][_a-zA-Z0-9]{,62}$')
-SQL_SCHEMA_NAME_RESERVED_RE = re.compile(r'^pg_', re.IGNORECASE)
-
-
-def _is_valid_identifier(identifier):
-    return bool(SQL_IDENTIFIER_RE.match(identifier))
-
-
-def _check_identifier(identifier):
-    if not _is_valid_identifier(identifier):
-        raise ValidationError("Invalid string used for the identifier.")
-
-
-def _is_valid_schema_name(name):
-    return _is_valid_identifier(name) and not SQL_SCHEMA_NAME_RESERVED_RE.match(name)
-
-
-def _check_schema_name(name):
-    if not _is_valid_schema_name(name):
-        raise ValidationError("Invalid string used for the schema name.")
 
 
 class DatabaseWrapper(original_backend.DatabaseWrapper):
@@ -51,7 +24,6 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
 
         # Use a patched version of the DatabaseIntrospection that only returns the table list for the
         # currently selected schema.
-        self.introspection = DatabaseSchemaIntrospection(self)
         self.set_schema_to_public()
 
     def close(self):
@@ -99,16 +71,6 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
     def set_settings_schema(self, schema_name):
         self.settings_dict['SCHEMA'] = schema_name
 
-    def get_schema(self):
-        warnings.warn("connection.get_schema() is deprecated, use connection.schema_name instead.",
-                      category=DeprecationWarning)
-        return self.schema_name
-
-    def get_tenant(self):
-        warnings.warn("connection.get_tenant() is deprecated, use connection.tenant instead.",
-                      category=DeprecationWarning)
-        return self.tenant
-
     def _cursor(self, name=None):
         """
         Here it happens. We hope every Django db operation using PostgreSQL
@@ -129,39 +91,31 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
             if not self.schema_name:
                 raise ImproperlyConfigured("Database schema not set. Did you forget "
                                            "to call set_schema() or set_tenant()?")
-            _check_schema_name(self.schema_name)
             public_schema_name = get_public_schema_name()
-            search_paths = []
-
             if self.schema_name == public_schema_name:
-                search_paths = [public_schema_name]
-            elif self.include_public_schema:
-                search_paths = [self.schema_name, public_schema_name]
-            else:
-                search_paths = [self.schema_name]
-
-            search_paths.extend(EXTRA_SEARCH_PATHS)
+                # should we treat it different?
+                pass
 
             if name:
                 # Named cursor can only be used once
-                cursor_for_search_path = self.connection.cursor()
+                cursor_for_tenant_property = self.connection.cursor()
             else:
                 # Reuse
-                cursor_for_search_path = cursor
+                cursor_for_tenant_property = cursor
 
             # In the event that an error already happened in this transaction and we are going
             # to rollback we should just ignore database error when setting the search_path
             # if the next instruction is not a rollback it will just fail also, so
             # we do not have to worry that it's not the good one
             try:
-                cursor_for_search_path.execute('SET search_path = {0}'.format(','.join(search_paths)))
+                cursor_for_tenant_property.execute(f'SET txerpa.tenant = {self.schema_name}')
             except (django.db.utils.DatabaseError, psycopg2.InternalError):
                 self.search_path_set = False
             else:
                 self.search_path_set = True
 
             if name:
-                cursor_for_search_path.close()
+                cursor_for_tenant_property.close()
 
         return cursor
 

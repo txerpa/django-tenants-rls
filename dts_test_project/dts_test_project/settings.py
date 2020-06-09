@@ -78,10 +78,6 @@ DATABASES = {
     }
 }
 
-DATABASE_ROUTERS = (
-    'tenant_schemas.routers.TenantSyncRouter',
-)
-
 MIDDLEWARE = (
     'tenant_tutorial.middleware.TenantTutorialMiddleware',
     'django.middleware.common.CommonMiddleware',

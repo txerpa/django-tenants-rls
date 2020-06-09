@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.management import call_command
 from django.db import connection
 from django.test import TestCase
 from tenant_schemas.utils import get_public_schema_name, get_tenant_model
@@ -21,38 +20,26 @@ class TenantTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sync_shared()
         cls.add_allowed_test_domain()
         tenant_domain = 'tenant.test.com'
         cls.tenant = get_tenant_model()(domain_url=tenant_domain, schema_name='test')
-        cls.tenant.save(verbosity=0)  # todo: is there any way to get the verbosity from the test command here?
-
+        cls.tenant.save(verbosity=0)
         connection.set_tenant(cls.tenant)
 
     @classmethod
     def tearDownClass(cls):
-        connection.set_schema_to_public()
-        cls.tenant.delete()
-
-        cls.remove_allowed_test_domain()
-        cursor = connection.cursor()
-        cursor.execute('DROP SCHEMA IF EXISTS test CASCADE')
+        pass
 
     @classmethod
     def sync_shared(cls):
-        call_command('migrate_schemas',
-                     schema_name=get_public_schema_name(),
-                     interactive=False,
-                     verbosity=0)
+        pass
 
 
 class FastTenantTestCase(TenantTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.sync_shared()
         cls.add_allowed_test_domain()
         tenant_domain = 'tenant.test.com'
-
         TenantModel = get_tenant_model()
         try:
             cls.tenant = TenantModel.objects.get(domain_url=tenant_domain, schema_name='test')

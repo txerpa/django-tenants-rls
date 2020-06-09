@@ -14,4 +14,5 @@ def reverse(viewname, urlconf=None, args=None, kwargs=None, prefix=None,
     )
     return clean_tenant_url(url)
 
+
 reverse_lazy = lazy(reverse, str)

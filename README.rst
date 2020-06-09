@@ -4,7 +4,7 @@ django-tenant-schemas
 |PyPi version| |PyPi downloads| |Python versions| |Travis CI| |PostgreSQL|
 
 This application enables `django`_ powered websites to have multiple
-tenants via `PostgreSQL schemas`_. A vital feature for every
+tenants via `PostgreSQL row-level security`_. A vital feature for every
 Software-as-a-Service website.
 
 Django provides currently no simple way to support multiple tenants
@@ -16,17 +16,8 @@ able to have:
 -  Shared and Tenant-Specific data
 -  Tenant View-Routing
 
-What are schemas
-----------------
-
-A schema can be seen as a directory in an operating system, each
-directory (schema) with it's own set of files (tables and objects). This
-allows the same table name and objects to be used in different schemas
-without conflict. For an accurate description on schemas, see
-`PostgreSQL's official documentation on schemas`_.
-
-Why schemas
------------
+Why row-level security and not schemas
+--------------------------------------
 
 There are typically three solutions for solving the multitenancy
 problem.
@@ -41,32 +32,29 @@ problem.
    the same database and schema. There is a main tenant-table, where all
    other tables have a foreign key pointing to.
 
-This application implements the second approach, which in our opinion,
+This application implements the *third* approach, which in our opinion,
 represents the ideal compromise between simplicity and performance.
+
+We have being using dts for years with great pain, as tenant base grew was
+nearly imposible to maintain, both due of the complexity of migrations wich
+can endure for hours and the lack of a suitable backup when you have hundred
+of thousands of tables, which can happen really fast when running a SaaS
+service as txerpa.com.
+
+So we've decided to fork django-tenant-schemas to maintain its goals.
 
 -  Simplicity: barely make any changes to your current code to support
    multitenancy. Plus, you only manage one database.
 -  Performance: make use of shared connections, buffers and memory.
 
-Each solution has it's up and down sides, for a more in-depth
-discussion, see Microsoft's excellent article on `Multi-Tenant Data
-Architecture`_.
+DTS is better suited if you plan to have less than a hundred (or so) tenants
+each one with tons of data. DTS is a great project that has been really usefull
+for us, we love the simplicity of its API and the level of isolation it granted
+to our project.
 
 How it works
 ------------
-
-Tenants are identified via their host name (i.e tenant.domain.com). This
-information is stored on a table on the ``public`` schema. Whenever a
-request is made, the host name is used to match a tenant in the
-database. If there's a match, the search path is updated to use this
-tenant's schema. So from now on all queries will take place at the
-tenant's schema. For example, suppose you have a tenant ``customer`` at
-http://customer.example.com. Any request incoming at
-``customer.example.com`` will automatically use ``customer``\ 's schema
-and make the tenant available at the request. If no tenant is found, a
-404 error is raised. This also means you should have a tenant for your
-main domain, typically using the ``public`` schema. For more information
-please read the `setup`_ section.
+TODO
 
 What can this app do?
 ---------------------
@@ -74,14 +62,14 @@ What can this app do?
 As many tenants as you want
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each tenant has its data on a specific schema. Use a single project
+Each tenant has its data protected and database level with row-level security. Use a single project
 instance to serve as many as you want.
 
-Tenant-specific and shared apps
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Tenant-specific and shared models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Tenant-specific apps do not share their data between tenants, but you
-can also have shared apps where the information is always available and
+can also have shared models where the information is always available and
 shared between all.
 
 Tenant View-Routing
@@ -218,7 +206,7 @@ Use handlers of your preference.
 
 
 .. _django: https://www.djangoproject.com/
-.. _PostgreSQL schemas: http://www.postgresql.org/docs/9.1/static/ddl-schemas.html
+.. _PostgreSQL row-level security: https://www.postgresql.org/docs/11/ddl-rowsecurity.html
 .. _PostgreSQL's official documentation on schemas: http://www.postgresql.org/docs/9.1/static/ddl-schemas.html
 .. _Multi-Tenant Data Architecture: http://msdn.microsoft.com/en-us/library/aa479086.aspx
 

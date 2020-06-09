@@ -35,11 +35,11 @@ def best_practice(app_configs, **kwargs):
     if not hasattr(settings, 'SHARED_APPS'):
         return [Critical('SHARED_APPS setting not set')]
 
-    if 'tenant_schemas.routers.TenantSyncRouter' not in settings.DATABASE_ROUTERS:
-        return [
-            Critical("DATABASE_ROUTERS setting must contain "
-                     "'tenant_schemas.routers.TenantSyncRouter'.")
-        ]
+    # if 'tenant_schemas.routers.TenantSyncRouter' not in settings.DATABASE_ROUTERS:
+    #     return [
+    #         Critical("DATABASE_ROUTERS setting must contain "
+    #                  "'tenant_schemas.routers.TenantSyncRouter'.")
+    #     ]
 
     errors = []
 
