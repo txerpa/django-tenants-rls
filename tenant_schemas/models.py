@@ -65,13 +65,13 @@ class TenantMixin(models.Model):
         # TODO: delete or move to a trash bin all related data
         return super(TenantMixin, self).delete(*args, **kwargs)
 
+
 def get_tenant():
     tenant = connection.tenant
     if tenant is None:
-        raise
-    if not isinstance(tenant, settings.TENANT_MODEL):
-        tenant = settings.TENANT_MODEL(schema_name=tenant.schema_name)
-    return tenant
+        raise Exception('No no no')
+    model = get_tenant_model()
+    return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
 
 
 class MultitenantMixin(models.Model):

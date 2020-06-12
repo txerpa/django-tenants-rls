@@ -22,8 +22,17 @@ class RLSDatabaseSchemaEditor(DatabaseSchemaEditor):
 
         super().create_model(model=model)
         # enable RLS on table and create policy
+        self._set_tenant_rls(enable_rls, model)
+
+    def add_field(self, model, field):
+        enable_rls = field.rls_required if hasattr(field, 'rls_required') else False
+        super().add_field(model, field)
+        # enable RLS on table and create policy
+        self._set_tenant_rls(enable_rls, model)
+
+    def _set_tenant_rls(self, enable_rls, model):
         if enable_rls:
-            self.execute(self.sql_enable_rls % { "table": self.quote_name(model._meta.db_table)})
+            self.execute(self.sql_enable_rls % {"table": self.quote_name(model._meta.db_table)})
             self.execute(self.sql_create_policy % {
                 "table": model._meta.db_table,
                 "policy": "(tenant_id = current_setting('txerpa.tenant')) with check (tenant_id = current_setting('txerpa.tenant'))"
