@@ -1,12 +1,16 @@
-from django.core.management import call_command
+from django.conf import settings
 from django.db import connection, models
+
+from tenant_schemas.fields import RLSForeignKey
 from tenant_schemas.signals import post_schema_sync
+from tenant_schemas.utils import get_tenant_model, get_tenant_field
 
 
 class TenantQueryset(models.QuerySet):
     """
     QuerySet for instances that inherit from the TenantMixin.
     """
+
     def delete(self):
         """
         Make sure we call the delete method of each object in the queryset so
@@ -60,3 +64,29 @@ class TenantMixin(models.Model):
         """
         # TODO: delete or move to a trash bin all related data
         return super(TenantMixin, self).delete(*args, **kwargs)
+
+def get_tenant():
+    tenant = connection.tenant
+    if tenant is None:
+        raise
+    if not isinstance(tenant, settings.TENANT_MODEL):
+        tenant = settings.TENANT_MODEL(schema_name=tenant.schema_name)
+    return tenant
+
+
+class MultitenantMixin(models.Model):
+    """
+    Mixin for any shared schema table (multitenant table). Adds a FK to the Tenant Model
+    and enforces all constraints to the table to work with Row Level Security.
+    """
+
+    tenant = RLSForeignKey(
+        settings.TENANT_MODEL,
+        to_field=get_tenant_field(),
+        blank=True,
+        default=get_tenant,
+        on_delete=models.PROTECT
+    )
+
+    class Meta:
+        abstract = True

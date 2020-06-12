@@ -5,10 +5,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ImproperlyConfigured, ValidationError
 import django.db.utils
 
+from tenant_schemas.postgresql_backend.schema import RLSDatabaseSchemaEditor
 from tenant_schemas.utils import get_public_schema_name, get_limit_set_calls
 
 
-ORIGINAL_BACKEND = getattr(settings, 'ORIGINAL_BACKEND', 'django.db.backends.postgresql_psycopg2')
+ORIGINAL_BACKEND = getattr(
+    settings, "ORIGINAL_BACKEND", "django.db.backends.postgresql_psycopg2"
+)
 # Django 1.9+ takes care to rename the default backend to 'django.db.backends.postgresql'
 original_backend = django.db.utils.load_backend(ORIGINAL_BACKEND)
 
@@ -17,7 +20,9 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
     """
     Adds the capability to manipulate the search_path using set_tenant and set_schema_name
     """
+
     include_public_schema = True
+    SchemaEditorClass = RLSDatabaseSchemaEditor
 
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
@@ -69,7 +74,7 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
         self.set_schema(get_public_schema_name())
 
     def set_settings_schema(self, schema_name):
-        self.settings_dict['SCHEMA'] = schema_name
+        self.settings_dict["SCHEMA"] = schema_name
 
     def _cursor(self, name=None):
         """
@@ -89,8 +94,10 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
             # search schemata from left to right when looking for the object
             # (table, index, sequence, etc.).
             if not self.schema_name:
-                raise ImproperlyConfigured("Database schema not set. Did you forget "
-                                           "to call set_schema() or set_tenant()?")
+                raise ImproperlyConfigured(
+                    "Database schema not set. Did you forget "
+                    "to call set_schema() or set_tenant()?"
+                )
             public_schema_name = get_public_schema_name()
             if self.schema_name == public_schema_name:
                 # should we treat it different?
@@ -108,7 +115,9 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
             # if the next instruction is not a rollback it will just fail also, so
             # we do not have to worry that it's not the good one
             try:
-                cursor_for_tenant_property.execute(f'SET txerpa.tenant = {self.schema_name}')
+                cursor_for_tenant_property.execute(
+                    f"SET txerpa.tenant = '{self.schema_name}'"
+                )
             except (django.db.utils.DatabaseError, psycopg2.InternalError):
                 self.search_path_set = False
             else:
@@ -125,5 +134,6 @@ class FakeTenant:
     We can't import any db model in a backend (apparently?), so this class is used
     for wrapping schema names in a tenant-like structure.
     """
+
     def __init__(self, schema_name):
         self.schema_name = schema_name

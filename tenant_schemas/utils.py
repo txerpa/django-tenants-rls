@@ -38,6 +38,10 @@ def get_tenant_model():
     return get_model(*settings.TENANT_MODEL.split("."))
 
 
+def get_tenant_field():
+    return 'schema_name'
+
+
 def get_public_schema_name():
     return getattr(settings, 'PUBLIC_SCHEMA_NAME', 'public')
 
