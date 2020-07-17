@@ -3,7 +3,7 @@ import os
 from tenant_schemas.migration_executors.base import MigrationExecutor
 from tenant_schemas.migration_executors.parallel import ParallelExecutor
 from tenant_schemas.migration_executors.standard import StandardExecutor
-from tenant_schemas.migration_executors.async import CeleryExecutor
+from tenant_schemas.migration_executors.celery import CeleryExecutor
 
 
 def get_executor(codename=None):
