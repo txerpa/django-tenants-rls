@@ -11,6 +11,7 @@ from tenant_schemas.utils import get_tenant_model
 class RLSDatabaseSchemaEditor(DatabaseSchemaEditor):
 
     sql_enable_rls = "ALTER TABLE %(table)s enable ROW LEVEL SECURITY"
+    sql_force_rls = "ALTER TABLE %(table)s FORCE ROW LEVEL SECURITY"
     sql_create_policy = (
         "CREATE POLICY _po_tenant_%(table)s ON %(table)s FOR ALL USING %(policy)s"
     )
@@ -33,6 +34,7 @@ class RLSDatabaseSchemaEditor(DatabaseSchemaEditor):
     def _set_tenant_rls(self, enable_rls, model):
         if enable_rls:
             self.execute(self.sql_enable_rls % {"table": self.quote_name(model._meta.db_table)})
+            self.execute(self.sql_force_rls % {"table": self.quote_name(model._meta.db_table)})
             self.execute(self.sql_create_policy % {
                 "table": model._meta.db_table,
                 "policy": "(tenant_id = current_setting('txerpa.tenant')) with check (tenant_id = current_setting('txerpa.tenant'))"
