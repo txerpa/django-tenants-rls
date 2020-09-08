@@ -134,7 +134,7 @@ Create your tenant model
     from django.db import models
     from tenant_schemas.models import TenantMixin
 
-    class Client(TenantMixin):
+    class Client(TenantMixin, models.Model):
         name = models.CharField(max_length=100)
         paid_until =  models.DateField()
         on_trial = models.BooleanField()

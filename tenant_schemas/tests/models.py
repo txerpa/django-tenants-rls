@@ -1,16 +1,9 @@
 from tenant_schemas.models import TenantMixin
+from django.db import models
 
 
-# as TenantMixin is an abstract model, it needs to be created
-class Tenant(TenantMixin):
+class Tenant(TenantMixin, models.Model):
     pass
-
-    class Meta:
-        app_label = 'tenant_schemas'
-
-
-class NonAutoSyncTenant(TenantMixin):
-    auto_create_schema = False
 
     class Meta:
         app_label = 'tenant_schemas'

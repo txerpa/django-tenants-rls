@@ -8,7 +8,7 @@ from django.db import connection
 
 from dts_test_app.models import DummyModel, ModelWithFkToPublicUser
 from tenant_schemas.test.cases import TenantTestCase
-from tenant_schemas.tests.models import NonAutoSyncTenant, Tenant
+from tenant_schemas.tests.models import Tenant
 from tenant_schemas.tests.testcases import BaseTestCase
 from tenant_schemas.utils import (get_public_schema_name, get_tenant_model,
                                   schema_context, schema_exists,
@@ -40,17 +40,6 @@ class TenantDataAndSettingsTest(BaseTestCase):
 
         self.assertTrue(schema_exists(tenant.schema_name))
 
-    def test_non_auto_sync_tenant(self):
-        """
-        When saving a tenant that has the flag auto_create_schema as
-        False, the schema should not be created when saving the tenant.
-        """
-        self.assertFalse(schema_exists('non_auto_sync_tenant'))
-        tenant = NonAutoSyncTenant(domain_url='something.test.com',
-                                   schema_name='non_auto_sync_tenant')
-        tenant.save(verbosity=BaseTestCase.get_verbosity())
-        self.assertFalse(schema_exists(tenant.schema_name))
-
     def test_sync_tenant(self):
         """
         When editing an existing tenant, all data should be kept.
@@ -74,55 +63,6 @@ class TenantDataAndSettingsTest(BaseTestCase):
 
         # test if data is still there
         self.assertEqual(DummyModel.objects.count(), 2)
-
-    def test_auto_drop_schema(self):
-        """
-        When deleting a tenant with auto_drop_schema=True, it should delete
-        the schema associated with the tenant.
-        """
-        self.assertFalse(schema_exists('auto_drop_tenant'))
-        Tenant.auto_drop_schema = True
-        tenant = Tenant(domain_url='something.test.com',
-                        schema_name='auto_drop_tenant')
-        tenant.save(verbosity=BaseTestCase.get_verbosity())
-        self.assertTrue(schema_exists(tenant.schema_name))
-        cursor = connection.cursor()
-
-        # Force pending trigger events to be executed
-        cursor.execute('SET CONSTRAINTS ALL IMMEDIATE')
-
-        tenant.delete()
-        self.assertFalse(schema_exists(tenant.schema_name))
-        Tenant.auto_drop_schema = False
-
-    def test_auto_drop_schema_bulk_delete(self):
-        """
-        When bulk deleting tenants, it should also drop the schemas of
-        tenants that have auto_drop_schema set to True.
-        """
-        Tenant.auto_drop_schema = True
-        schemas = ['auto_drop_schema1', 'auto_drop_schema2']
-        for schema in schemas:
-            self.assertFalse(schema_exists(schema))
-            tenant = Tenant(
-                domain_url='%s.test.com' % schema,
-                schema_name=schema
-            )
-            tenant.save(verbosity=BaseTestCase.get_verbosity())
-            self.assertTrue(schema_exists(tenant.schema_name))
-
-        # Force pending trigger events to be executed
-        cursor = connection.cursor()
-        cursor.execute('SET CONSTRAINTS ALL IMMEDIATE')
-
-        # get a queryset of our 2 tenants and do a bulk delete
-        Tenant.objects.filter(schema_name__in=schemas).delete()
-
-        # verify that the schemas where deleted
-        for schema in schemas:
-            self.assertFalse(schema_exists(schema))
-
-        Tenant.auto_drop_schema = False
 
     def test_switching_search_path(self):
         tenant1 = Tenant(domain_url='something.test.com',
