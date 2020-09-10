@@ -91,7 +91,7 @@ Now we have to create your tenant model. Your tenant model can contain whichever
     from django.db import models
     from tenant_schemas.models import TenantMixin
 
-    class Client(TenantMixin):
+    class Client(TenantMixin, models.Model):
         name = models.CharField(max_length=100)
         paid_until =  models.DateField()
         on_trial = models.BooleanField()
@@ -187,10 +187,10 @@ globally.
 Working with Tenant specific schemas
 ====================================
 Since each Tenant has it's own schema in the database you need a way to tell Django what
-schema to use when using the management commands. 
+schema to use when using the management commands.
 
 A special management command ``tenant_command`` has been added to allow you to
-execute Django management commands in the context of a specific Tenant schema. 
+execute Django management commands in the context of a specific Tenant schema.
 
 .. code-block:: python
 
@@ -199,7 +199,7 @@ execute Django management commands in the context of a specific Tenant schema.
 .. warning::
 
    Depending on the configuration of your applications, the command you execute
-   may impact shared data also. 
+   may impact shared data also.
 
 Creating a new Tenant
 =====================

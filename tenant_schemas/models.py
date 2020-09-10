@@ -33,18 +33,6 @@ class TenantMixin(models.Model):
     All tenant models must inherit this class.
     """
 
-    auto_drop_schema = False
-    """
-    USE THIS WITH CAUTION!
-    Set this flag to true on a parent class if you want the schema to be
-    automatically deleted if the tenant row gets deleted.
-    """
-
-    auto_create_schema = True
-    """
-    Set this flag to false on a parent class if you don't want the schema
-    to be automatically created upon save.
-    """
     domain_url = models.CharField(max_length=128, unique=True)
     schema_name = models.CharField(max_length=63, unique=True)
     objects = TenantQueryset.as_manager()
@@ -52,24 +40,17 @@ class TenantMixin(models.Model):
     class Meta:
         abstract = True
 
-    def save(self, verbosity=1, *args, **kwargs):
-        super(TenantMixin, self).save(*args, **kwargs)
-        if self.pk is None and self.auto_create_schema:
-            post_schema_sync.send(sender=TenantMixin, tenant=self)
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
-    def delete(self, force_drop=False, *args, **kwargs):
-        """
-        Deletes this row. Drops the tenant's schema if the attribute
-        auto_drop_schema set to True.
-        """
-        # TODO: delete or move to a trash bin all related data
-        return super(TenantMixin, self).delete(*args, **kwargs)
+        if self.pk is None:
+            post_schema_sync.send(sender=TenantMixin, tenant=self)
 
 
 def get_tenant():
     tenant = connection.tenant
     if tenant is None:
-        raise Exception('No no no')
+        raise Exception("No tenant configured in db connection, connection.tenant is none")
     model = get_tenant_model()
     return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
 
