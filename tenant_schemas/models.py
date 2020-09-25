@@ -1,9 +1,10 @@
 from django.conf import settings
+from django.core import checks
 from django.db import connection, models
 
-from tenant_schemas.fields import RLSForeignKey
-from tenant_schemas.signals import post_schema_sync
-from tenant_schemas.utils import get_tenant_model, get_tenant_field
+from .fields import RLSForeignKey
+from .signals import post_schema_sync
+from .utils import get_tenant_model, get_tenant_field
 
 
 class TenantQueryset(models.QuerySet):
@@ -71,3 +72,72 @@ class MultitenantMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def check(cls, **kwargs):
+        errors = super().check(**kwargs)
+        errors.extend(cls._check_tenant_field())
+        errors.extend(cls._check_m2m_fields())
+        return errors
+
+    @classmethod
+    def _check_tenant_field(cls):
+
+        all_fields = cls._meta.get_fields()
+        tenant_fields = [field for field in all_fields if field.name == 'tenant']
+        tenant_field = tenant_fields[0] if tenant_fields else None
+        object_name = cls._meta.object_name
+
+        # Ensure that tenant field are still present.
+        if not tenant_field:
+            return [
+                checks.Critical(
+                    f"tenant field not present in {object_name}", obj=cls, id=f'tenant_schemas.tenant_field.C001'
+                )
+            ]
+        # Ensure that tenant field is instance of RLSForeignKey.
+        elif not isinstance(tenant_field, RLSForeignKey):
+            return [
+                checks.WARNING(
+                    f"tenant field isn't instance of {RLSForeignKey.__name__} in {object_name}", obj=cls,
+                    id=f'tenant_schemas.tenant_field.W001'
+                )
+            ]
+
+        return list()
+
+    @classmethod
+    def _check_m2m_fields(cls):
+        all_fields = cls._meta.get_fields()
+
+        warnings = list()
+
+        # Ensure that m2m field related model has tenant field and is an instance of RLSForeignKey
+        m2m_fields = (field for field in all_fields if isinstance(field, models.ManyToManyField))
+        for m2m_field in m2m_fields:
+            through_all_fields = m2m_field.remote_field.through._meta.get_fields()
+            through_tenant_fields = [field for field in through_all_fields if field.name == 'tenant']
+            through_tenant_field = through_tenant_fields[0] if through_tenant_fields else None
+            through_object_name = m2m_field.remote_field.through._meta.object_name
+
+            auto_or_manual_model = 'auto-created' if m2m_field.remote_field.through._meta.auto_created else 'manual'
+
+            if not through_tenant_field:
+                warnings.append(
+                    checks.Warning(
+                        f"tenant field not present in Many2Many {auto_or_manual_model} model: {through_object_name}",
+                        hint=f"Use custom defined model for through property in Many2Many field "
+                             f"{cls._meta.object_name}.{m2m_field.name} using {MultitenantMixin.__name__} "
+                             f"in the model definition",
+                        id=f'tenant_schemas.m2m_field.W001'
+                    )
+                )
+            elif not isinstance(through_tenant_field, RLSForeignKey):
+                warnings.append(
+                    checks.Warning(
+                        f"tenant field isn't instance of RLSForeignKey in {through_object_name}",
+                        id=f'tenant_schemas.m2m_field.W002'
+                    )
+                )
+
+        return warnings
