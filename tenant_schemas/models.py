@@ -78,6 +78,7 @@ class MultitenantMixin(models.Model):
         errors = super().check(**kwargs)
         errors.extend(cls._check_tenant_field())
         errors.extend(cls._check_m2m_fields())
+        # TODO: Add unique-together-index check, "tenant" must be present in this types of indexes
         return errors
 
     @classmethod
@@ -92,15 +93,18 @@ class MultitenantMixin(models.Model):
         if not tenant_field:
             return [
                 checks.Critical(
-                    f"tenant field not present in {object_name}", obj=cls, id=f'tenant_schemas.tenant_field.C001'
+                    f"tenant field not present in {object_name}",
+                    obj=cls,
+                    id=f'tenant_schemas.{object_name}.tenant_field.C001'
                 )
             ]
         # Ensure that tenant field is instance of RLSForeignKey.
         elif not isinstance(tenant_field, RLSForeignKey):
             return [
                 checks.WARNING(
-                    f"tenant field isn't instance of {RLSForeignKey.__name__} in {object_name}", obj=cls,
-                    id=f'tenant_schemas.tenant_field.W001'
+                    f"tenant field isn't instance of {RLSForeignKey.__name__} in {object_name}",
+                    obj=cls,
+                    id=f'tenant_schemas.{object_name}.tenant_field.W001'
                 )
             ]
 
@@ -129,14 +133,15 @@ class MultitenantMixin(models.Model):
                         hint=f"Use custom defined model for through property in Many2Many field "
                              f"{cls._meta.object_name}.{m2m_field.name} using {MultitenantMixin.__name__} "
                              f"in the model definition",
-                        id=f'tenant_schemas.m2m_field.W001'
+                        id=f'tenant_schemas.{through_object_name}.m2m_field.W001'
                     )
                 )
             elif not isinstance(through_tenant_field, RLSForeignKey):
                 warnings.append(
                     checks.Warning(
                         f"tenant field isn't instance of RLSForeignKey in {through_object_name}",
-                        id=f'tenant_schemas.m2m_field.W002'
+                        id=f'tenant_schemas.{through_object_name}.m2m_field.W002'
+
                     )
                 )
 
