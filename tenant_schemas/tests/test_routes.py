@@ -25,7 +25,7 @@ class RoutesTestCase(BaseTestCase):
                                    'django.contrib.contenttypes',
                                    'django.contrib.auth', )
         cls.public_tenant = Tenant(domain_url='test.com', schema_name=get_public_schema_name())
-        cls.public_tenant.save(verbosity=BaseTestCase.get_verbosity())
+        cls.public_tenant.save()
 
     def setUp(self):
         super(RoutesTestCase, self).setUp()
@@ -35,7 +35,7 @@ class RoutesTestCase(BaseTestCase):
 
         self.tenant_domain = 'tenant.test.com'
         self.tenant = Tenant(domain_url=self.tenant_domain, schema_name='test')
-        self.tenant.save(verbosity=BaseTestCase.get_verbosity())
+        self.tenant.save()
 
         self.non_existent_domain = 'no-tenant.test.com'
         self.non_existent_tenant = Tenant(domain_url=self.non_existent_domain, schema_name='no-tenant')

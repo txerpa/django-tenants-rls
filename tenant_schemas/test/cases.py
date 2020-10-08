@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import connection
 from django.test import TestCase
-from tenant_schemas.utils import get_public_schema_name, get_tenant_model
+from tenant_schemas.utils import get_tenant_model
 
 ALLOWED_TEST_DOMAIN = '.test.com'
 
@@ -22,8 +22,9 @@ class TenantTestCase(TestCase):
     def setUpClass(cls):
         cls.add_allowed_test_domain()
         tenant_domain = 'tenant.test.com'
-        cls.tenant = get_tenant_model()(domain_url=tenant_domain, schema_name='test')
-        cls.tenant.save(verbosity=0)
+        tenant_model_class = get_tenant_model()
+        cls.tenant = tenant_model_class(domain_url=tenant_domain, schema_name='test')
+        cls.tenant.save()
         connection.set_tenant(cls.tenant)
 
     @classmethod
@@ -45,7 +46,7 @@ class FastTenantTestCase(TenantTestCase):
             cls.tenant = TenantModel.objects.get(domain_url=tenant_domain, schema_name='test')
         except:
             cls.tenant = TenantModel(domain_url=tenant_domain, schema_name='test')
-            cls.tenant.save(verbosity=0)
+            cls.tenant.save()
 
         connection.set_tenant(cls.tenant)
 

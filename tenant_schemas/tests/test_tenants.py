@@ -29,14 +29,14 @@ class TenantDataAndSettingsTest(BaseTestCase):
                                    'django.contrib.contenttypes',
                                    'django.contrib.auth', )
 
-        Tenant(domain_url='test.com', schema_name=get_public_schema_name()).save(verbosity=cls.get_verbosity())
+        Tenant(domain_url='test.com', schema_name=get_public_schema_name()).save()
 
     def test_tenant_schema_is_created(self):
         """
         When saving a tenant, it's schema should be created.
         """
         tenant = Tenant(domain_url='something.test.com', schema_name='test')
-        tenant.save(verbosity=BaseTestCase.get_verbosity())
+        tenant.save()
 
         self.assertTrue(schema_exists(tenant.schema_name))
 
@@ -45,7 +45,7 @@ class TenantDataAndSettingsTest(BaseTestCase):
         When editing an existing tenant, all data should be kept.
         """
         tenant = Tenant(domain_url='something.test.com', schema_name='test')
-        tenant.save(verbosity=BaseTestCase.get_verbosity())
+        tenant.save()
 
         # go to tenant's path
         connection.set_tenant(tenant)
@@ -57,7 +57,7 @@ class TenantDataAndSettingsTest(BaseTestCase):
         # edit tenant
         connection.set_schema_to_public()
         tenant.domain_url = 'example.com'
-        tenant.save(verbosity=BaseTestCase.get_verbosity())
+        tenant.save()
 
         connection.set_tenant(tenant)
 
@@ -67,11 +67,11 @@ class TenantDataAndSettingsTest(BaseTestCase):
     def test_switching_search_path(self):
         tenant1 = Tenant(domain_url='something.test.com',
                          schema_name='tenant1')
-        tenant1.save(verbosity=BaseTestCase.get_verbosity())
+        tenant1.save()
 
         connection.set_schema_to_public()
         tenant2 = Tenant(domain_url='example.com', schema_name='tenant2')
-        tenant2.save(verbosity=BaseTestCase.get_verbosity())
+        tenant2.save()
 
         # go to tenant1's path
         connection.set_tenant(tenant1)
@@ -96,7 +96,7 @@ class TenantDataAndSettingsTest(BaseTestCase):
 
     def test_switching_tenant_without_previous_tenant(self):
         tenant = Tenant(domain_url='something.test.com', schema_name='test')
-        tenant.save(verbosity=BaseTestCase.get_verbosity())
+        tenant.save()
 
         connection.tenant = None
         with tenant_context(tenant):
@@ -116,11 +116,11 @@ class SharedAuthTest(BaseTestCase):
                                 'django.contrib.contenttypes', )
         settings.TENANT_APPS = ('dts_test_app', )
         settings.INSTALLED_APPS = settings.SHARED_APPS + settings.TENANT_APPS
-        Tenant(domain_url='test.com', schema_name=get_public_schema_name()).save(verbosity=cls.get_verbosity())
+        Tenant(domain_url='test.com', schema_name=get_public_schema_name()).save()
 
         # Create a tenant
         cls.tenant = Tenant(domain_url='tenant.test.com', schema_name='tenant')
-        cls.tenant.save(verbosity=cls.get_verbosity())
+        cls.tenant.save()
 
         # Create some users
         with schema_context(get_public_schema_name()):  # this could actually also be executed inside a tenant

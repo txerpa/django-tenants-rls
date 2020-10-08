@@ -77,8 +77,8 @@ def best_practice(app_configs, **kwargs):
     if not isinstance(default_storage, TenantStorageMixin):
         warnings.append(Warning(
             "Your default storage engine is not tenant aware.",
-            hint="Set settings.DEFAULT_FILE_STORAGE to "
-                 "'tenant_schemas.storage.TenantFileSystemStorage'",
+            hint="Set settings.DEFAULT_FILE_STORAGE to 'tenant_schemas.storage.TenantFileSystemStorage' "
+                 "or use custom one.",
             id="tenant_schemas.W003"
         ))
 

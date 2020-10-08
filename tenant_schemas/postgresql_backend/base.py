@@ -118,7 +118,7 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
                 cursor_for_tenant_property.execute(
                     f"SET txerpa.tenant = '{self.schema_name}'"
                 )
-            except (django.db.utils.DatabaseError, psycopg2.InternalError):
+            except (django.db.utils.DatabaseError, psycopg2.InternalError) as e:
                 self.search_path_set = False
             else:
                 self.search_path_set = True
