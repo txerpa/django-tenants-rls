@@ -76,17 +76,21 @@ class MultitenantMixin(models.Model):
     @classmethod
     def check(cls, **kwargs):
         errors = super().check(**kwargs)
-        errors.extend(cls._check_tenant_field())
-        errors.extend(cls._check_m2m_fields())
-        # TODO: Add unique-together-index check, "tenant" must be present in this types of indexes
+        errors.extend(cls._run_check_tenant_field())
+        errors.extend(cls._run_check_m2m_fields())
+        errors.extend(cls._run_check_unique_together())
         return errors
 
     @classmethod
-    def _check_tenant_field(cls):
-
+    def _get_tenant_field(cls):
         all_fields = cls._meta.get_fields()
         tenant_fields = [field for field in all_fields if field.name == 'tenant']
         tenant_field = tenant_fields[0] if tenant_fields else None
+        return tenant_field
+
+    @classmethod
+    def _run_check_tenant_field(cls):
+        tenant_field = cls._get_tenant_field()
         object_name = cls._meta.object_name
 
         # Ensure that tenant field are still present.
@@ -111,7 +115,7 @@ class MultitenantMixin(models.Model):
         return list()
 
     @classmethod
-    def _check_m2m_fields(cls):
+    def _run_check_m2m_fields(cls):
         all_fields = cls._meta.get_fields()
 
         warnings = list()
@@ -144,5 +148,24 @@ class MultitenantMixin(models.Model):
 
                     )
                 )
+
+        return warnings
+
+    @classmethod
+    def _run_check_unique_together(cls):
+        warnings = list()
+
+        if cls._meta.unique_together:
+            object_name = cls._meta.object_name
+            tenant_field = cls._get_tenant_field()
+            for unique_together in cls._meta.unique_together:
+                if tenant_field.name not in unique_together:
+                    warnings.append(
+                        checks.Warning(
+                            f"tenant field isn't in unique_together in {object_name}: {unique_together}",
+                            id=f'tenant_schemas.{object_name}.unique_together_without_tenant.W001'
+
+                        )
+                    )
 
         return warnings
