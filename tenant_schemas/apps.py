@@ -2,8 +2,9 @@ from django.apps import AppConfig, apps
 from django.conf import settings
 from django.core.checks import Critical, Error, Warning, register
 from django.core.files.storage import default_storage
-from tenant_schemas.storage import TenantStorageMixin
-from tenant_schemas.utils import get_public_schema_name, get_tenant_model
+
+from .contrib.drf.utils import is_bad_tenant_field_config
+from .storage import TenantStorageMixin
 
 
 class TenantSchemaConfig(AppConfig):
@@ -83,3 +84,30 @@ def best_practice(app_configs, **kwargs):
         ))
 
     return warnings + errors
+
+
+@register('rest_framework.serializers')
+def check_serializers(app_configs, **kwargs):
+    import inspect
+    from rest_framework.serializers import ModelSerializer
+    from .models import MultitenantMixin
+    from .contrib.drf.serializers import RLSModelSerializer
+
+    import config.urls  # noqa, force import of all serializers.
+
+    for serializer in ModelSerializer.__subclasses__():
+
+        # Skip third-party apps and serializers that have already RLSModelSerializer as base class.
+        path = inspect.getfile(serializer)
+        if path.find('site-packages') > -1 or issubclass(serializer, RLSModelSerializer):
+            continue
+
+        model = getattr(serializer.Meta, 'model')
+        if issubclass(model, MultitenantMixin) and is_bad_tenant_field_config(serializer):
+            yield Warning(
+                f'{serializer.__name__} use a MultitenantMixin based model, but don\'t ignore tenant field, '
+                f'this may cause performance issues.',
+                hint=f'Add {RLSModelSerializer.__name__} to {serializer.__name__} serializer',
+                obj=serializer,
+                id='tenant_schemas.W004',
+            )
