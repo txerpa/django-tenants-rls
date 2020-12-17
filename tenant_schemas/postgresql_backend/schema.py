@@ -13,10 +13,10 @@ class RLSDatabaseSchemaEditor(DatabaseSchemaEditor):
         "DROP POLICY IF EXISTS _po_tenant_%(table)s ON %(table)s"
     )
     sql_alter_column_defaul_tenant = (
-        "ALTER TABLE ONLY %(table)s ALTER COLUMN tenant_id SET DEFAULT current_setting('txerpa.tenant');"
+        "ALTER TABLE ONLY %(table)s ALTER COLUMN tenant_id SET DEFAULT get_current_tenant();"
     )
     main_rls_policy = (
-        "(tenant_id = current_setting('txerpa.tenant')) with check (tenant_id = current_setting('txerpa.tenant'))"
+        "(tenant_id = get_current_tenant()) with check (tenant_id = get_current_tenant())"
     )
 
     def create_model(self, model):
