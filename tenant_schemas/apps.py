@@ -1,14 +1,29 @@
+import logging
+
 from django.apps import AppConfig, apps
 from django.conf import settings
 from django.core.checks import Critical, Error, Warning, register
 from django.core.files.storage import default_storage
+from django.db.models.signals import pre_migrate
+from django.core.management import call_command
 
 from .contrib.drf.utils import is_bad_tenant_field_config
 from .storage import TenantStorageMixin
 
+logger = logging.getLogger()
+
+
+def create_or_replace_pg_get_tenant_function(sender, **kwargs):
+    logger.info("running create_stable_tenant_function command...")
+    call_command('create_stable_tenant_function')
+    logger.info("OK")
+
 
 class TenantSchemaConfig(AppConfig):
     name = 'tenant_schemas'
+
+    def ready(self):
+        pre_migrate.connect(create_or_replace_pg_get_tenant_function, sender=self)
 
 
 @register('config')
