@@ -56,19 +56,26 @@ def get_tenant():
     return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
 
 
-class MultitenantMixin(models.Model):
+def generate_rls_fk_field():
     """
-    Mixin for any shared schema table (multitenant table). Adds a FK to the Tenant Model
-    and enforces all constraints to the table to work with Row Level Security.
+    This method generate the rls foreign key relation field and it aims to unify this definition in a single point
     """
-
-    tenant = RLSForeignKey(
+    return RLSForeignKey(
         settings.TENANT_MODEL,
         to_field=get_tenant_field(),
         blank=True,
         default=get_tenant,
         on_delete=models.PROTECT
     )
+
+
+class MultitenantMixin(models.Model):
+    """
+    Mixin for any shared schema table (multitenant table). Adds a FK to the Tenant Model
+    and enforces all constraints to the table to work with Row Level Security.
+    """
+
+    tenant = generate_rls_fk_field()
 
     class Meta:
         abstract = True
