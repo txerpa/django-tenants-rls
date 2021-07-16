@@ -3,7 +3,16 @@ from django.core import checks
 from django.db import connection, models
 
 from .fields import RLSForeignKey, generate_rls_fk_field
+from .utils import get_tenant_model
 from .signals import post_schema_sync
+
+
+def get_tenant():
+    tenant = connection.tenant
+    if tenant is None:
+        raise Exception("No tenant configured in db connection, connection.tenant is none")
+    model = get_tenant_model()
+    return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
 
 
 class TenantQueryset(models.QuerySet):
