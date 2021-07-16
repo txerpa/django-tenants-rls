@@ -33,6 +33,7 @@ class TenantSchemaConfig(AppConfig):
         CONFIG_APPS = {
             'easyaudit'
         }
+        EXTERNAL_MODELS_FIELD_NAME = 'tenant'
 
         candidate_rls_apps = set(settings.TENANT_APPS) & set(CONFIG_APPS)
 
@@ -41,7 +42,7 @@ class TenantSchemaConfig(AppConfig):
             if app_config.name in candidate_rls_apps:
                 for model_name, model in app_config.models.items():
                     if not issubclass(model, MultitenantMixin):
-                        model.add_to_class('tenant', generate_rls_fk_field())
+                        model.add_to_class(EXTERNAL_MODELS_FIELD_NAME, generate_rls_fk_field())
 
 
 @register('config')
