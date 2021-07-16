@@ -29,20 +29,15 @@ class TenantSchemaConfig(AppConfig):
     def configure_external_models(self):
         from .models import MultitenantMixin, generate_rls_fk_field
 
-        # TODO: Rename and move to app's config
-        CONFIG_APPS = {
-            'easyaudit'
-        }
-        EXTERNAL_MODELS_FIELD_NAME = 'tenant'
-
-        candidate_rls_apps = set(settings.TENANT_APPS) & set(CONFIG_APPS)
+        tenant_apps_set = set(settings.TENANT_APPS)
 
         for app in self.apps.all_models.keys():
             app_config = self.apps.app_configs[app]
-            if app_config.name in candidate_rls_apps:
+            if app_config.name in tenant_apps_set:
                 for model_name, model in app_config.models.items():
                     if not issubclass(model, MultitenantMixin):
-                        model.add_to_class(EXTERNAL_MODELS_FIELD_NAME, generate_rls_fk_field())
+                        # tenant field name is also hardcoded in tenant_schemas.models.MultitenantMixin
+                        model.add_to_class('tenant', generate_rls_fk_field())
 
 
 @register('config')

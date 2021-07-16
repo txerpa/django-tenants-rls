@@ -34,6 +34,14 @@ def tenant_context(tenant):
             connection.set_tenant(previous_tenant)
 
 
+def get_tenant():
+    tenant = connection.tenant
+    if tenant is None:
+        raise Exception("No tenant configured in db connection, connection.tenant is none")
+    model = get_tenant_model()
+    return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
+
+
 def get_tenant_model():
     return get_model(*settings.TENANT_MODEL.split("."))
 

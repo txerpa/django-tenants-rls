@@ -2,9 +2,8 @@ from django.conf import settings
 from django.core import checks
 from django.db import connection, models
 
-from .fields import RLSForeignKey
+from .fields import RLSForeignKey, generate_rls_fk_field
 from .signals import post_schema_sync
-from .utils import get_tenant_model, get_tenant_field
 
 
 class TenantQueryset(models.QuerySet):
@@ -46,27 +45,6 @@ class TenantMixin(models.Model):
 
         if self.pk is None:
             post_schema_sync.send(sender=TenantMixin, tenant=self)
-
-
-def get_tenant():
-    tenant = connection.tenant
-    if tenant is None:
-        raise Exception("No tenant configured in db connection, connection.tenant is none")
-    model = get_tenant_model()
-    return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
-
-
-def generate_rls_fk_field():
-    """
-    This method generate the rls foreign key relation field and it aims to unify this definition in a single point
-    """
-    return RLSForeignKey(
-        settings.TENANT_MODEL,
-        to_field=get_tenant_field(),
-        blank=True,
-        default=get_tenant,
-        on_delete=models.PROTECT
-    )
 
 
 class MultitenantMixin(models.Model):
