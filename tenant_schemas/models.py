@@ -2,9 +2,17 @@ from django.conf import settings
 from django.core import checks
 from django.db import connection, models
 
-from .fields import RLSForeignKey
+from .fields import RLSForeignKey, generate_rls_fk_field
+from .utils import get_tenant_model
 from .signals import post_schema_sync
-from .utils import get_tenant_model, get_tenant_field
+
+
+def get_tenant():
+    tenant = connection.tenant
+    if tenant is None:
+        raise Exception("No tenant configured in db connection, connection.tenant is none")
+    model = get_tenant_model()
+    return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
 
 
 class TenantQueryset(models.QuerySet):
@@ -48,27 +56,13 @@ class TenantMixin(models.Model):
             post_schema_sync.send(sender=TenantMixin, tenant=self)
 
 
-def get_tenant():
-    tenant = connection.tenant
-    if tenant is None:
-        raise Exception("No tenant configured in db connection, connection.tenant is none")
-    model = get_tenant_model()
-    return tenant if isinstance(tenant, model) else model(schema_name=tenant.schema_name)
-
-
 class MultitenantMixin(models.Model):
     """
     Mixin for any shared schema table (multitenant table). Adds a FK to the Tenant Model
     and enforces all constraints to the table to work with Row Level Security.
     """
 
-    tenant = RLSForeignKey(
-        settings.TENANT_MODEL,
-        to_field=get_tenant_field(),
-        blank=True,
-        default=get_tenant,
-        on_delete=models.PROTECT
-    )
+    tenant = generate_rls_fk_field()
 
     class Meta:
         abstract = True

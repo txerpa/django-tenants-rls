@@ -24,6 +24,20 @@ class TenantSchemaConfig(AppConfig):
 
     def ready(self):
         pre_migrate.connect(create_or_replace_pg_get_tenant_function, sender=self)
+        self.configure_external_models()
+
+    def configure_external_models(self):
+        from .models import MultitenantMixin, generate_rls_fk_field
+
+        tenant_apps_set = set(settings.TENANT_APPS)
+
+        for app in self.apps.all_models.keys():
+            app_config = self.apps.app_configs[app]
+            if app_config.name in tenant_apps_set:
+                for model_name, model in app_config.models.items():
+                    if not issubclass(model, MultitenantMixin):
+                        # tenant field name is also hardcoded in tenant_schemas.models.MultitenantMixin
+                        model.add_to_class('tenant', generate_rls_fk_field())
 
 
 @register('config')

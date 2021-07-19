@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from tenant_schemas.models import get_tenant, MultitenantMixin
+from tenant_schemas.models import MultitenantMixin, get_tenant
 from .utils import is_bad_tenant_field_config
 
 
