@@ -26,7 +26,6 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
 
     def __init__(self, *args, **kwargs):
         self.search_path_set = None
-        self.last_search_path_set = None
         self.tenant = None
         self.schema_name = None
 
@@ -103,10 +102,6 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
                     "Database schema not set. Did you forget "
                     "to call set_schema() or set_tenant()?"
                 )
-            # public_schema_name = get_public_schema_name()
-            # if self.schema_name == public_schema_name:
-            #     # should we treat it different?
-            #     pass
 
             if name:
                 # Named cursor can only be used once
@@ -119,16 +114,14 @@ class DatabaseWrapper(original_backend.DatabaseWrapper):
             # to rollback we should just ignore database error when setting the search_path
             # if the next instruction is not a rollback it will just fail also, so
             # we do not have to worry that it's not the good one
-            if self.last_search_path_set != self.schema_name:
-                try:
-                    cursor_for_tenant_property.execute(
-                        f"SET txerpa.tenant = '{self.schema_name}'"
-                    )
-                    self.last_search_path_set = self.schema_name
-                except (django.db.utils.DatabaseError, psycopg2.InternalError):
-                    self.search_path_set = False
-                else:
-                    self.search_path_set = True
+            try:
+                cursor_for_tenant_property.execute(
+                    f"SET txerpa.tenant = '{self.schema_name}'"
+                )
+            except (django.db.utils.DatabaseError, psycopg2.InternalError):
+                self.search_path_set = False
+            else:
+                self.search_path_set = True
 
             if name:
                 cursor_for_tenant_property.close()
