@@ -30,7 +30,7 @@ setup(
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Framework :: Django',
-        'Framework :: Django :: 2.2.3',
+        'Framework :: Django :: 3.4',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.8',
@@ -38,8 +38,10 @@ setup(
         'Topic :: Software Development :: Libraries',
     ],
     install_requires=[
-        'Django>=2.2',
+        'Django>=3.0',
         'psycopg2',
+        'djangorestframework>=3.11.2',
+        'djangorestframework-jsonapi>=3.1.0'
     ],
     zip_safe=False,
 )
