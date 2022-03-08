@@ -7,7 +7,7 @@ from setuptools import setup
 from version import get_git_version
 
 setup(
-    name='django-tenant-schemas',
+    name='django-tenants-rls',
     version=get_git_version(),
     author='Bernardo Pires Carneiro',
     author_email='carneiro.be@gmail.com',
@@ -23,13 +23,14 @@ setup(
         'tenant_schemas.tests',
     ],
     scripts=[],
-    url='https://github.com/bcarneiro/django-tenant-schemas',
+    url='https://github.com/txerpa/django-tenants-rls',
     license='MIT',
     description='Tenant support for Django using PostgreSQL RLS.',
     long_description=open('README.rst').read() if exists('README.rst') else '',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Framework :: Django',
+        'Framework :: Django :: 3.2',
         'Framework :: Django :: 3.4',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
