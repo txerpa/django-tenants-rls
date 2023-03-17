@@ -2,9 +2,9 @@
 *.pyc
 *.swp
 .DS_Store
-VERSION
 _build/
 dist/
 django_tenants_rls.egg-info/
 .idea/
 build/
+venv/
